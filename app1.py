@@ -194,66 +194,58 @@ elif st.session_state.current_page == "Pengertian":
 elif st.session_state.current_page == "Optimasi":
     st.title("📈 OPTIMASI PRODUKSI")
     
-# In the Optimasi Produksi section (replace the example case part):
 with st.expander("📚 Contoh Kasus", expanded=True):
     st.subheader("Studi Kasus: Perusahaan Furniture")
     
-    # Container with light background
-    with st.container():
+    with st.expander("📚 Contoh Soal & Pembahasan", expanded=True):
+        st.subheader("Studi Kasus: Perusahaan Furniture")
         st.markdown("""
-        <style>
-            .example-case {
-                background-color: #f8f9fa;
-                padding: 15px;
-                border-radius: 10px;
-                border-left: 4px solid #2e86c1;
-            }
-        </style>
-        <div class="example-case">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <h4>Produk 1 (Meja)</h4>
-                    <p><strong>Keuntungan/unit:</strong> Rp120.000</p>
-                    <p><strong>Waktu produksi:</strong> 3 jam</p>
-                    <p><strong>Maksimal permintaan:</strong> 30 unit</p>
-                </div>
-                <div>
-                    <h4>Produk 2 (Kursi)</h4>
-                    <p><strong>Keuntungan/unit:</strong> Rp80.000</p>
-                    <p><strong>Waktu produksi:</strong> 2 jam</p>
-                    <p><strong>Maksimal permintaan:</strong> 40 unit</p>
-                </div>
-            </div>
-            <p><strong>Total waktu tersedia:</strong> 120 jam/minggu</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    if st.button("💡 Lihat Solusi Contoh", type="secondary"):
+        **PT Kayu Indah** memproduksi:
+        - **Meja**: Keuntungan Rp120.000/unit, butuh 3 jam pengerjaan
+        - **Kursi**: Keuntungan Rp80.000/unit, butuh 2 jam pengerjaan
+        
+        **Kendala:**
+        - Waktu produksi maksimal 120 jam/minggu
+        - Permintaan pasar maksimal 30 meja dan 40 kursi per minggu
+        """)
+        
+        if st.button("💡 Lihat Solusi Contoh", type="secondary"):
             st.markdown("---")
+            st.subheader("Penyelesaian:")
+            
             cols = st.columns(2)
             with cols[0]:
-                st.subheader("Formulasi Matematis")
                 st.latex(r"""
                 \begin{aligned}
-                \text{Maks } Z &= 120000x_1 + 80000x_2 \\
-                \text{s.t. } &3x_1 + 2x_2 \leq 120 \\
-                &x_1 \leq 30 \\
-                &x_2 \leq 40 \\
-                &x_1, x_2 \geq 0
+                \text{Maksimalkan } & Z = 120000x_1 + 80000x_2 \\
+                \text{Dengan kendala: } & 3x_1 + 2x_2 \leq 120 \\
+                & x_1 \leq 30 \\
+                & x_2 \leq 40 \\
+                & x_1 \geq 0, x_2 \geq 0
                 \end{aligned}
                 """)
             
             with cols[1]:
-                st.subheader("Langkah Penyelesaian")
                 st.markdown("""
-                1. Identifikasi titik pojok feasible region
-                2. Hitung nilai Z di setiap titik
-                3. Pilih titik dengan Z terbesar
+                **Solusi Optimal:**
+                - Produksi 30 meja
+                - Produksi 15 kursi
+                - Keuntungan maksimum: Rp4.800.000/minggu
                 """)
-                st.write("**Solusi Optimal:**")
-                st.write("- Produksi Meja: 30 unit")
-                st.write("- Produksi Kursi: 15 unit")
-                st.write("- Keuntungan: Rp4.800.000")
+            
+            fig, ax = plt.subplots(figsize=(10,6))
+            x = np.linspace(0, 40, 100)
+            y1 = (120 - 3*x)/2
+            ax.plot(x, y1, 'b-', label='3x₁ + 2x₂ ≤ 120')
+            ax.axvline(30, color='r', label='x₁ ≤ 30')
+            ax.axhline(40, color='g', label='x₂ ≤ 40')
+            ax.fill_between(x, 0, np.minimum(y1, 40), where=(x<=30), alpha=0.1)
+            ax.plot(30, 15, 'ro', markersize=8)
+            ax.set_xlabel('Meja (x₁)')
+            ax.set_ylabel('Kursi (x₂)')
+            ax.legend()
+            ax.grid(True)
+            st.pyplot(fig)
 
     with st.expander("🔧 PARAMETER PRODUKSI", expanded=True):
         col1, col2 = st.columns(2)
