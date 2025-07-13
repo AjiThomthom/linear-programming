@@ -194,26 +194,41 @@ elif st.session_state.current_page == "Pengertian":
 elif st.session_state.current_page == "Optimasi":
     st.title("📈 OPTIMASI PRODUKSI")
     
-    with st.expander("📚 Contoh Kasus", expanded=True):
-        st.subheader("Studi Kasus: Perusahaan Furniture")
-        
-        # Contoh kasus dalam bentuk input tapi disabled
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Produk 1 (Meja)")
-            st.text_input("Keuntungan/unit (Rp)", value="120000", disabled=True, key="ex_p1")
-            st.text_input("Waktu produksi (jam)", value="3", disabled=True, key="ex_t1")
-            st.text_input("Maksimal permintaan", value="30", disabled=True, key="ex_max1")
-        
-        with col2:
-            st.subheader("Produk 2 (Kursi)")
-            st.text_input("Keuntungan/unit (Rp)", value="80000", disabled=True, key="ex_p2")
-            st.text_input("Waktu produksi (jam)", value="2", disabled=True, key="ex_t2")
-            st.text_input("Maksimal permintaan", value="40", disabled=True, key="ex_max2")
-        
-        st.text_input("Total waktu tersedia (jam)", value="120", disabled=True, key="ex_total")
+# In the Optimasi Produksi section (replace the example case part):
+with st.expander("📚 Contoh Kasus", expanded=True):
+    st.subheader("Studi Kasus: Perusahaan Furniture")
+    
+    # Container with light background
+    with st.container():
+        st.markdown("""
+        <style>
+            .example-case {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 10px;
+                border-left: 4px solid #2e86c1;
+            }
+        </style>
+        <div class="example-case">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <h4>Produk 1 (Meja)</h4>
+                    <p><strong>Keuntungan/unit:</strong> Rp120.000</p>
+                    <p><strong>Waktu produksi:</strong> 3 jam</p>
+                    <p><strong>Maksimal permintaan:</strong> 30 unit</p>
+                </div>
+                <div>
+                    <h4>Produk 2 (Kursi)</h4>
+                    <p><strong>Keuntungan/unit:</strong> Rp80.000</p>
+                    <p><strong>Waktu produksi:</strong> 2 jam</p>
+                    <p><strong>Maksimal permintaan:</strong> 40 unit</p>
+                </div>
+            </div>
+            <p><strong>Total waktu tersedia:</strong> 120 jam/minggu</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        if st.button("💡 Lihat Solusi Contoh", type="secondary"):
+    if st.button("💡 Lihat Solusi Contoh", type="secondary"):
             st.markdown("---")
             cols = st.columns(2)
             with cols[0]:
