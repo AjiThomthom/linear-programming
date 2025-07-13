@@ -479,27 +479,34 @@ elif st.session_state.current_page == "Optimasi":
                         """)
                 
                 elif solver_option == "Simplex Method":
-                    # Gunakan metode simpleks dari scipy
-                    res = linprog(
-                        c=[-p1, -p2],  # Negative for maximization
-                        A_ub=[[t1, t2]],
-                        b_ub=[total_time],
-                        bounds=((0, max1), (0, max2))
-                    
-                    optimal_point = (res.x[0], res.x[1])
-                    optimal_value = p1*res.x[0] + p2*res.x[1]
-                    
-                    st.markdown("""
-                    ### Metode Simpleks
-                    Solusi ditemukan menggunakan algoritma simpleks dengan bantuan library `scipy.optimize.linprog`.
-                    """)
-                    st.json({
-                        "status": "Optimal" if res.success else "Tidak Optimal",
-                        "x1": res.x[0],
-                        "x2": res.x[1],
-                        "slack": res.slack[0],
-                        "keuntungan": optimal_value
-                    })
+                    # Perbaikan pada bagian metode simplex
+                elif solver_option == "Simplex Method":
+                # Gunakan metode simpleks dari scipy
+                    try:
+                        res = linprog(
+                            c=[-p1, -p2],  # Negative for maximization
+                            A_ub=[[t1, t2]],
+                            b_ub=[total_time],
+                            bounds=((0, max1), (0, max2)),
+                            method='highs'  # Tambahkan metode solver
+                        )
+        
+                        optimal_point = (res.x[0], res.x[1])
+                        optimal_value = p1*res.x[0] + p2*res.x[1]
+        
+                        st.markdown("""
+                        ### Metode Simpleks
+                        Solusi ditemukan menggunakan algoritma simpleks dengan bantuan library `scipy.optimize.linprog`.
+                        """)
+                        st.json({
+                            "status": "Optimal" if res.success else "Tidak Optimal",
+                            "x1": res.x[0],
+                            "x2": res.x[1],
+                            "slack": res.slack[0],
+                            "keuntungan": optimal_value
+                        })
+                    except Exception as e:
+                        st.error(f"Error dalam metode simplex: {str(e)}")
 
                 # Tampilkan hasil akhir
                 st.markdown("---")
