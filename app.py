@@ -54,8 +54,8 @@ with st.sidebar:
     st.image(f"data:image/png;base64,{LOGO_BASE64}", use_container_width=True)
     st.title("MENU NAVIGASI")
     st.button("📘 Pengertian Model", on_click=change_page, args=("Pengertian",), use_container_width=True)
-    st.button("🧮 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
     st.button("🔧 Cara Penggunaan", on_click=change_page, args=("Panduan",), use_container_width=True)
+    st.button("🧮 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
     st.markdown("---")
     st.info("""
     **Versi 3.0.0**  
@@ -69,36 +69,90 @@ if st.session_state.current_page == "Pengertian":
     st.title("📘 PENGERTIAN MODEL OPTIMASI PRODUKSI")
     st.image(f"data:image/jpeg;base64,{HEADER_BASE64}", use_container_width=True)
     st.markdown("""
-    Model optimasi produksi digunakan untuk menentukan kombinasi terbaik dari produk yang akan diproduksi agar **memaksimalkan keuntungan** atau **meminimalkan biaya** berdasarkan **kendala sumber daya** seperti waktu, bahan baku, atau tenaga kerja.
+    Model optimasi produksi adalah teknik matematis yang digunakan untuk mencari kombinasi terbaik dari produk yang harus diproduksi agar dapat **memaksimalkan keuntungan** atau **meminimalkan biaya**, dengan memperhatikan keterbatasan sumber daya seperti waktu kerja, bahan baku, tenaga kerja, dan kapasitas produksi.
 
-    ### Rumus Umum:
-    Fungsi Objektif:
-    $$\text{Maksimalkan } Z = c_1x_1 + c_2x_2 + \dots + c_nx_n$$
+    ### 🎯 Tujuan Utama
+    - Menentukan jumlah optimal dari masing-masing produk yang akan diproduksi.
+    - Menggunakan sumber daya yang terbatas secara efisien.
 
-    Kendala:
-    $$a_{11}x_1 + a_{12}x_2 + \dots + a_{1n}x_n \le b_1$$
-    $$a_{21}x_1 + a_{22}x_2 + \dots + a_{2n}x_n \le b_2$$
+    ### 🔢 Komponen Utama Model
+    - **Fungsi Objektif:** Tujuan yang ingin dicapai, misalnya memaksimalkan keuntungan.
+    - **Kendala:** Batasan-batasan nyata yang dihadapi perusahaan (misal waktu kerja maksimal).
+    - **Variabel Keputusan:** Nilai-nilai yang ingin dicari (misalnya jumlah produk yang diproduksi).
 
-    dan seterusnya...
+    ### 🧮 Rumus Umum
+    **Fungsi Objektif:**
+    $$ \text{Maksimalkan } Z = c_1x_1 + c_2x_2 + \dots + c_nx_n $$
 
-    Dengan syarat:
-    $$x_i \ge 0$$
+    **Dengan Kendala:**
+    $$ a_{11}x_1 + a_{12}x_2 + \dots + a_{1n}x_n \le b_1 $$
+    $$ a_{21}x_1 + a_{22}x_2 + \dots + a_{2n}x_n \le b_2 $$
+    $$ \vdots $$
+
+    **Syarat Non-Negatif:**
+    $$ x_1, x_2, \dots, x_n \ge 0 $$
+
+    ### 📌 Contoh Penerapan
+    Sebuah perusahaan memproduksi dua jenis barang: meja dan kursi. Dengan batas waktu produksi dan keuntungan berbeda, perusahaan ingin mengetahui kombinasi produksi terbaik agar keuntungan maksimum tercapai.
+
+    Untuk menyelesaikannya, digunakan model matematis seperti di atas, lalu diselesaikan menggunakan metode grafik atau algoritma linear programming.
+    """)
+
+# =============== HALAMAN PANDUAN ===============
+elif st.session_state.current_page == "Panduan":
+    st.title("📖 CARA PENGGUNAAN APLIKASI")
+    st.markdown("""
+    ### Langkah-langkah:
+    1. Pilih menu "🧮 Optimasi Produksi"
+    2. Masukkan parameter seperti keuntungan, waktu kerja, dan batasan
+    3. Klik tombol "HITUNG OPTIMAL"
+    4. Lihat hasil dan grafik solusi
+    5. Gunakan hasil untuk keputusan produksi
     """)
 
 # =============== HALAMAN OPTIMASI ===============
 elif st.session_state.current_page == "Optimasi":
     st.title("🧮 OPTIMASI PRODUKSI")
 
-    with st.expander("📚 Contoh Soal", expanded=True):
+    with st.expander("📚 Contoh Soal & Solusi", expanded=True):
         st.markdown("""
-        **PT Kayu Indah** memproduksi **Meja** dan **Kursi**:
-        - Meja: keuntungan Rp120.000/unit, waktu produksi 3 jam
-        - Kursi: keuntungan Rp80.000/unit, waktu produksi 2 jam
-        - Total waktu tersedia: 120 jam
-        - Maksimal permintaan: 30 meja dan 40 kursi per minggu
+        **Studi Kasus: PT Kayu Indah**
+
+        - Produk Meja: keuntungan Rp120.000, waktu 3 jam/unit
+        - Produk Kursi: keuntungan Rp80.000, waktu 2 jam/unit
+        - Batas total waktu produksi: 120 jam
+        - Batas permintaan: max 30 meja, 40 kursi
+
+        ### Penyelesaian:
+        Misal:
+        - x₁ = jumlah meja yang diproduksi
+        - x₂ = jumlah kursi yang diproduksi
+
+        Maka model optimasi:
+        \begin{aligned}
+        \text{Maksimalkan } & Z = 120000x_1 + 80000x_2 \\
+        \text{Dengan kendala: } & 3x_1 + 2x_2 \le 120 \\
+        & x_1 \le 30 \\
+        & x_2 \le 40 \\
+        & x_1, x_2 \ge 0
+        \end{aligned}
+
+        Titik-titik potensi:
+        - A = (0, 0)
+        - B = (30, 0)
+        - C = (30, 15)
+        - D = (0, 40)
+        - E = (20, 40)
+
+        Substitusi tiap titik ke fungsi tujuan:
+        - Z(A) = 0
+        - Z(B) = 3.600.000
+        - Z(C) = 4.800.000 ← **Maksimum**
+        - Z(D) = 3.200.000
+        - Z(E) = 4.000.000
         """)
 
-    with st.expander("🔧 Input Parameter", expanded=True):
+    with st.expander("🔧 Input Parameter Produksi", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
             p1 = st.number_input("Keuntungan Meja (Rp/unit)", 120000)
@@ -122,8 +176,24 @@ elif st.session_state.current_page == "Optimasi":
         idx = np.argmax(nilai)
         optimal = titik[idx]
 
-        st.subheader("📈 Hasil Optimasi")
-        st.success(f"Produksi Meja: {optimal[0]:.0f}, Kursi: {optimal[1]:.0f}\nTotal Keuntungan: Rp{nilai[idx]:,.0f}")
+        st.subheader("📈 Hasil Perhitungan")
+        st.markdown(f"""
+        ### Fungsi Objektif:
+        $$ Z = {p1}x_1 + {p2}x_2 $$
+
+        ### Kendala:
+        \begin{aligned}
+        & {t1}x_1 + {t2}x_2 \le {waktu_total} \\
+        & x_1 \le {m1} \\
+        & x_2 \le {m2} \\
+        & x_1, x_2 \ge 0
+        \end{aligned}
+
+        ### Solusi Optimal:
+        - Meja (x₁): **{optimal[0]:.0f} unit**
+        - Kursi (x₂): **{optimal[1]:.0f} unit**
+        - Keuntungan Maksimum: **Rp {nilai[idx]:,.0f}**
+        """)
 
         fig, ax = plt.subplots(figsize=(8,6))
         x = np.linspace(0, m1*1.2, 200)
@@ -133,24 +203,12 @@ elif st.session_state.current_page == "Optimasi":
         ax.axhline(m2, label=f"y ≤ {m2}", color="green")
         ax.plot(optimal[0], optimal[1], 'ro', label="Titik Optimal")
         ax.fill_between(x, 0, np.minimum(y, m2), where=(x<=m1), alpha=0.1)
-        ax.set_xlabel("Meja (x)")
-        ax.set_ylabel("Kursi (y)")
+        ax.set_xlabel("Meja (x₁)")
+        ax.set_ylabel("Kursi (x₂)")
         ax.set_title("Wilayah Solusi Feasible")
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
-
-# =============== HALAMAN PANDUAN ===============
-elif st.session_state.current_page == "Panduan":
-    st.title("📖 CARA PENGGUNAAN APLIKASI")
-    st.markdown("""
-    ### Langkah-langkah:
-    1. Pilih menu "🧮 Optimasi Produksi"
-    2. Masukkan parameter seperti keuntungan, waktu kerja, dan batasan
-    3. Klik tombol "HITUNG OPTIMAL"
-    4. Lihat hasil dan grafik solusi
-    5. Gunakan hasil untuk keputusan produksi
-    """)
 
 # =============== CUSTOM STYLE ===============
 st.markdown("""
