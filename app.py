@@ -1,17 +1,17 @@
-import streamlit as st
-import numpy as np
-import matplotlib.pyplot as plt
-from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
-import base64
-from streamlit.components.v1 import html
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-import tempfile
+import streamlit as st  # Framework utama untuk membangun web app interaktif
+import numpy as np  # Komputasi numerik & operasi matematika (untuk perhitungan optimasi)
+import matplotlib.pyplot as plt  # Visualisasi data (grafik solusi optimal)
+from io import BytesIO  # Menangani data biner (konversi gambar/PDF ke byte)
+from PIL import Image, ImageDraw, ImageFont  # Manipulasi gambar (buat logo/header)
+import base64  # Encode/decode gambar ke teks (untuk tampilkan di HTML)
+from streamlit.components.v1 import html  # Embed HTML custom di Streamlit
+from reportlab.pdfgen import canvas  # Generate PDF level rendah
+from reportlab.lib.pagesizes import letter  # Ukuran halaman standar PDF
+from reportlab.lib import colors  # Warna untuk PDF
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage  # Generate PDF level tinggi
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # Style teks PDF
+from reportlab.lib.units import inch  # Konversi satuan inci untuk layout PDF
+import tempfile  # Membuat file sementara (untuk penyimpanan plot sementara)
 
 # =============== FUNGSI UTILITAS ===============
 def mermaid(code: str, height=300) -> None:
