@@ -163,6 +163,10 @@ except:
     LOGO_BASE64 = ""
     HEADER_BASE64 = ""
 
+# Tambahkan konfigurasi theme di session state
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = False
+
 st.set_page_config(
     layout="wide", 
     page_title="Aplikasi Model Industri",
@@ -175,6 +179,8 @@ if 'current_page' not in st.session_state:
 def change_page(page_name):
     st.session_state.current_page = page_name
 
+def toggle_dark_mode():
+    st.session_state.dark_mode = not st.session_state.dark_mode
 
 # =============== NAVIGASI SIDEBAR ===============
 with st.sidebar:
@@ -186,6 +192,13 @@ with st.sidebar:
     st.button("📊 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
     
     st.markdown("---")
+    
+    # Tambahkan toggle dark/light mode
+    if st.session_state.dark_mode:
+        st.button("☀️ Light Mode", on_click=toggle_dark_mode, use_container_width=True)
+    else:
+        st.button("🌙 Dark Mode", on_click=toggle_dark_mode, use_container_width=True)
+    
     st.info("""
     **Versi 2.2.1**  
     Dikembangkan oleh:  
@@ -193,6 +206,115 @@ with st.sidebar:
     🇮🇩 🇵🇸  
     © 2025
     """)
+
+# =============== STYLE CUSTOM ===============
+# Update style CSS untuk mendukung dark/light mode
+dark_mode_css = """
+:root {
+    --primary-color: #2e86c1;
+    --secondary-color: #2874a6;
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --card-bg: #1e1e1e;
+    --border-color: #444;
+    --hover-bg: #333;
+    --plot-bg: #2d2d2d;
+    --plot-text: #ffffff;
+    --plot-grid: #444;
+}
+"""
+
+light_mode_css = """
+:root {
+    --primary-color: #2e86c1;
+    --secondary-color: #2874a6;
+    --background-color: #ffffff;
+    --text-color: #333333;
+    --card-bg: #f9f9f9;
+    --border-color: #e1e1e1;
+    --hover-bg: #f0f0f0;
+    --plot-bg: #ffffff;
+    --plot-text: #000000;
+    --plot-grid: #e1e1e1;
+}
+"""
+
+base_css = """
+<style>
+    .stButton>button {
+        transition: all 0.3s;
+        border-radius: 8px;
+    }
+    .stButton>button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stMarkdown h2 {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 5px;
+    }
+    .stMarkdown h3 {
+        color: var(--secondary-color);
+    }
+    .stTextInput>div>div>input {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+    .mermaid {
+        background-color: var(--card-bg);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border: 1px solid var(--border-color);
+    }
+    .mermaid svg {
+        display: block;
+        margin: 0 auto;
+    }
+    .stDownloadButton>button {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        font-weight: bold !important;
+    }
+    body {
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+    .stApp {
+        background-color: var(--background-color);
+    }
+    .stSidebar {
+        background-color: var(--card-bg) !important;
+    }
+    .stAlert {
+        background-color: var(--card-bg) !important;
+    }
+    .stExpander {
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    .st-bb {
+        background-color: var(--card-bg) !important;
+    }
+    .st-at {
+        background-color: var(--hover-bg) !important;
+    }
+    .stPlotlyChart {
+        background-color: var(--plot-bg) !important;
+    }
+</style>
+"""
+
+# Terapkan CSS berdasarkan mode
+if st.session_state.dark_mode:
+    st.markdown(f"<style>{dark_mode_css}{base_css}</style>", unsafe_allow_html=True)
+    
+    # Update plot style untuk dark mode
+    plt.style.use('dark_background')
+else:
+    st.markdown(f"<style>{light_mode_css}{base_css}</style>", unsafe_allow_html=True)
+    plt.style.use('default')
 
 # =============== HALAMAN BERANDA ===============
 if st.session_state.current_page == "Beranda":
@@ -216,6 +338,7 @@ if st.session_state.current_page == "Beranda":
     - Contoh kasus siap pakai
     - Penjelasan langkah demi langkah
     - **Ekspor hasil ke PDF** (fitur baru)
+    - **Dark/Light Mode** (fitur baru)
     """)
 
 # =============== HALAMAN PENGERTIAN ===============
@@ -341,6 +464,17 @@ elif st.session_state.current_page == "Optimasi":
                     """)
                 
                 fig, ax = plt.subplots(figsize=(10,6))
+                if st.session_state.dark_mode:
+                    fig.patch.set_facecolor('#2d2d2d')
+                    ax.set_facecolor('#2d2d2d')
+                    ax.xaxis.label.set_color('white')
+                    ax.yaxis.label.set_color('white')
+                    ax.title.set_color('white')
+                    ax.tick_params(axis='x', colors='white')
+                    ax.tick_params(axis='y', colors='white')
+                    for spine in ax.spines.values():
+                        spine.set_edgecolor('white')
+                
                 x = np.linspace(0, 40, 100)
                 y1 = (120 - 3*x)/2
                 ax.plot(x, y1, 'b-', label='3x₁ + 2x₂ ≤ 120')
@@ -476,6 +610,18 @@ elif st.session_state.current_page == "Optimasi":
                     st.subheader("Visualisasi Grafik")
                     fig, ax = plt.subplots(figsize=(10,6))
                     
+                    # Atur warna plot berdasarkan mode
+                    if st.session_state.dark_mode:
+                        fig.patch.set_facecolor('#2d2d2d')
+                        ax.set_facecolor('#2d2d2d')
+                        ax.xaxis.label.set_color('white')
+                        ax.yaxis.label.set_color('white')
+                        ax.title.set_color('white')
+                        ax.tick_params(axis='x', colors='white')
+                        ax.tick_params(axis='y', colors='white')
+                        for spine in ax.spines.values():
+                            spine.set_edgecolor('white')
+                    
                     # Plot feasible region
                     x = np.linspace(0, max1*1.2, 100)
                     y = (total_time - t1*x)/t2
@@ -539,45 +685,3 @@ elif st.session_state.current_page == "Optimasi":
                         use_container_width=True
                     )
                     st.success("PDF siap diunduh! Klik tombol di atas untuk mengunduh laporan lengkap.")
-
-# =============== STYLE CUSTOM ===============
-st.markdown("""
-<style>
-    .stButton>button {
-        transition: all 0.3s;
-        border-radius: 8px;
-    }
-    .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .stMarkdown h2 {
-        color: #2e86c1;
-        border-bottom: 2px solid #2e86c1;
-        padding-bottom: 5px;
-    }
-    .stMarkdown h3 {
-        color: #2874a6;
-    }
-    .stTextInput>div>div>input {
-        background-color: #f0f0f0;
-        color: #333;
-    }
-    .mermaid {
-        background-color: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        border: 1px solid #e1e1e1;
-    }
-    .mermaid svg {
-        display: block;
-        margin: 0 auto;
-    }
-    .stDownloadButton>button {
-        background-color: #4CAF50 !important;
-        color: white !important;
-        font-weight: bold !important;
-    }
-</style>
-""", unsafe_allow_html=True)
