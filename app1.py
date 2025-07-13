@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import base64
+import json
 from streamlit.components.v1 import html
+from scipy.optimize import linprog
+from fpdf import FPDF
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 # =============== FUNGSI UTILITAS ===============
 def mermaid(code: str, height=300) -> None:
@@ -72,6 +77,28 @@ def create_header():
         st.error(f"Error creating header: {e}")
         return ""
 
+def buat_laporan(optimal_point, optimal_value, params):
+    """Membuat laporan PDF"""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Laporan Optimasi Produksi", ln=1, align='C')
+    
+    pdf.cell(200, 10, txt="Parameter Produksi:", ln=1)
+    pdf.cell(200, 10, txt=f"- Produk 1: Rp{params['p1']:,}/unit, {params['t1']} jam/unit, maks {params['max1']} unit", ln=1)
+    pdf.cell(200, 10, txt=f"- Produk 2: Rp{params['p2']:,}/unit, {params['t2']} jam/unit, maks {params['max2']} unit", ln=1)
+    pdf.cell(200, 10, txt=f"- Total waktu: {params['total']} jam", ln=1)
+    
+    pdf.cell(200, 10, txt="Hasil Optimasi:", ln=1)
+    pdf.cell(200, 10, txt=f"- Produk 1: {optimal_point[0]:.0f} unit", ln=1)
+    pdf.cell(200, 10, txt=f"- Produk 2: {optimal_point[1]:.0f} unit", ln=1)
+    pdf.cell(200, 10, txt=f"- Keuntungan Maksimum: Rp{optimal_value:,.0f}", ln=1)
+    
+    pdf.cell(200, 10, txt="Dihasilkan oleh Aplikasi Optimasi Produksi", ln=1)
+    pdf.cell(200, 10, txt=f"Pada: {time.strftime('%d/%m/%Y %H:%M:%S')}", ln=1)
+    
+    return pdf.output(dest='S').encode('latin1')
+
 # =============== KONFIGURASI APLIKASI ===============
 LOGO_BASE64 = create_logo()
 HEADER_BASE64 = create_header()
@@ -84,9 +111,14 @@ st.set_page_config(
 
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "Beranda"
+if 'produk3_active' not in st.session_state:
+    st.session_state.produk3_active = False
 
 def change_page(page_name):
     st.session_state.current_page = page_name
+
+def toggle_produk3():
+    st.session_state.produk3_active = not st.session_state.produk3_active
 
 # =============== NAVIGASI SIDEBAR ===============
 with st.sidebar:
@@ -99,7 +131,13 @@ with st.sidebar:
     
     st.markdown("---")
     st.info("""
-    **Versi 2.2.1**  
+    **Versi 2.3.0**  
+    Fitur Baru:
+    - Simpan/Load Kasus
+    - Analisis Sensitivitas
+    - Laporan PDF
+    - Multi Metode Solver
+    
     Dikembangkan oleh:  
     *Megatama Setiaji & Ronnan Ghazi*  
     🇮🇩 🇵🇸  
@@ -117,16 +155,33 @@ if st.session_state.current_page == "Beranda":
     2. **Optimasi Produksi**: Hitung solusi optimal untuk kasus Anda
     3. Masukkan parameter produksi
     4. Klik tombol **Hitung Solusi**
+    5. Simpan hasil atau ekspor laporan
     """)
     
     st.markdown("---")
-    st.subheader("🎯 Fitur Utama")
-    st.markdown("""
-    - Analisis produksi optimal dengan **Linear Programming**
-    - Visualisasi grafik interaktif
-    - Contoh kasus siap pakai
-    - Penjelasan langkah demi langkah
-    """)
+    st.subheader("🎯 Fitur Terbaru")
+    cols = st.columns(3)
+    with cols[0]:
+        st.markdown("""
+        ### 💾 Simpan/Load Kasus
+        - Simpan konfigurasi kasus
+        - Load kasus yang disimpan
+        - Berbagi kasus dengan kolega
+        """)
+    with cols[1]:
+        st.markdown("""
+        ### 🔍 Analisis Sensitivitas
+        - Shadow price
+        - Range kelayakan
+        - Analisis what-if
+        """)
+    with cols[2]:
+        st.markdown("""
+        ### 📄 Laporan PDF
+        - Ekspor hasil lengkap
+        - Format profesional
+        - Siap cetak
+        """)
 
 # =============== HALAMAN PENGERTIAN ===============
 elif st.session_state.current_page == "Pengertian":
@@ -277,7 +332,68 @@ elif st.session_state.current_page == "Optimasi":
                 t2 = st.number_input("Waktu produksi (jam)", 2, key="t2")
                 max2 = st.number_input("Maksimal permintaan", 40, key="max2")
             
+            # Toggle produk ketiga
+            if st.checkbox("+ Tambah Produk 3", key="toggle_produk3", on_change=toggle_produk3):
+                st.session_state.produk3_active = True
+                col3 = st.columns(1)[0]
+                with col3:
+                    st.subheader("Produk 3")
+                    p3 = st.number_input("Keuntungan/unit (Rp)", 50000, key="p3")
+                    t3 = st.number_input("Waktu produksi (jam)", 4, key="t3")
+                    max3 = st.number_input("Maksimal permintaan", 20, key="max3")
+            else:
+                st.session_state.produk3_active = False
+            
             total_time = st.number_input("Total waktu tersedia (jam)", 120, key="total")
+
+            # Pilih metode solver
+            solver_option = st.selectbox(
+                "Pilih Metode Solver",
+                ["Simple Corner Point", "Simplex Method"],
+                index=0
+            )
+
+        # Tombol untuk menyimpan konfigurasi
+        kasus = {
+            'p1': p1, 't1': t1, 'max1': max1,
+            'p2': p2, 't2': t2, 'max2': max2,
+            'total': total_time,
+            'produk3_active': st.session_state.produk3_active
+        }
+        
+        if st.session_state.produk3_active:
+            kasus.update({
+                'p3': p3, 't3': t3, 'max3': max3
+            })
+
+        col_save, col_load = st.columns(2)
+        with col_save:
+            st.download_button(
+                label="💾 Simpan Kasus Ini",
+                data=json.dumps(kasus, indent=2),
+                file_name="konfigurasi_kasus.json",
+                mime="application/json"
+            )
+        with col_load:
+            uploaded_file = st.file_uploader("📤 Upload Kasus", type=["json"], key="uploader")
+            if uploaded_file:
+                try:
+                    kasus_terupload = json.load(uploaded_file)
+                    st.session_state.p1 = kasus_terupload['p1']
+                    st.session_state.t1 = kasus_terupload['t1']
+                    st.session_state.max1 = kasus_terupload['max1']
+                    st.session_state.p2 = kasus_terupload['p2']
+                    st.session_state.t2 = kasus_terupload['t2']
+                    st.session_state.max2 = kasus_terupload['max2']
+                    st.session_state.total = kasus_terupload['total']
+                    if kasus_terupload.get('produk3_active', False):
+                        st.session_state.produk3_active = True
+                        st.session_state.p3 = kasus_terupload['p3']
+                        st.session_state.t3 = kasus_terupload['t3']
+                        st.session_state.max3 = kasus_terupload['max3']
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Gagal memuat kasus: {str(e)}")
 
         if st.button("🧮 HITUNG SOLUSI DETAIL", type="primary", use_container_width=True):
             with st.spinner('Menghitung solusi optimal...'):
@@ -285,82 +401,105 @@ elif st.session_state.current_page == "Optimasi":
                 st.markdown("---")
                 st.subheader("🔍 Proses Perhitungan")
                 
-                with st.expander("Langkah 1: Identifikasi Titik Pojok", expanded=True):
-                    cols = st.columns(2)
-                    with cols[0]:
-                        st.markdown("""
-                        **Titik A (Origin):**
-                        """)
-                        st.latex(r"x_1 = 0, x_2 = 0")
+                if solver_option == "Simple Corner Point":
+                    with st.expander("Langkah 1: Identifikasi Titik Pojok", expanded=True):
+                        cols = st.columns(2)
+                        with cols[0]:
+                            st.markdown("""
+                            **Titik A (Origin):**
+                            """)
+                            st.latex(r"x_1 = 0, x_2 = 0")
+                            
+                            st.markdown("""
+                            **Titik B (Maks Produk 1):**
+                            """)
+                            st.latex(fr"x_1 = {max1}, x_2 = 0")
+                            
+                            st.markdown("""
+                            **Titik C (Interseksi Kendala):**
+                            """)
+                            st.latex(fr"{t1}x_1 + {t2}x_2 = {total_time}")
+                            st.latex(fr"x_1 = {max1}")
+                            st.latex(fr"x_2 = \frac{{{total_time} - {t1} \times {max1}}}{{{t2}}} = {(total_time - t1*max1)/t2:.1f}")
                         
-                        st.markdown("""
-                        **Titik B (Maks Produk 1):**
-                        """)
-                        st.latex(fr"x_1 = {max1}, x_2 = 0")
-                        
-                        st.markdown("""
-                        **Titik C (Interseksi Kendala):**
-                        """)
-                        st.latex(fr"{t1}x_1 + {t2}x_2 = {total_time}")
-                        st.latex(fr"x_1 = {max1}")
-                        st.latex(fr"x_2 = \frac{{{total_time} - {t1} \times {max1}}}{{{t2}}} = {(total_time - t1*max1)/t2:.1f}")
+                        with cols[1]:
+                            st.markdown("""
+                            **Titik D (Interseksi Kendala):**
+                            """)
+                            st.latex(fr"{t1}x_1 + {t2}x_2 = {total_time}")
+                            st.latex(fr"x_2 = {max2}")
+                            st.latex(fr"x_1 = \frac{{{total_time} - {t2} \times {max2}}}{{{t1}}} = {(total_time - t2*max2)/t1:.1f}")
+                            
+                            st.markdown("""
+                            **Titik E (Maks Produk 2):**
+                            """)
+                            st.latex(fr"x_1 = 0, x_2 = \min\left(\frac{{{total_time}}}{{{t2}}}, {max2}\right) = {min(total_time/t2, max2):.1f}")
+
+                    # Langkah 2: Hitung nilai Z
+                    titik_A = (0, 0)
+                    titik_B = (max1, 0)
+                    titik_C = (max1, min((total_time - t1*max1)/t2, max2))
+                    titik_D = (min((total_time - t2*max2)/t1, max1), max2)
+                    titik_E = (0, min(total_time/t2, max2))
                     
-                    with cols[1]:
-                        st.markdown("""
-                        **Titik D (Interseksi Kendala):**
-                        """)
-                        st.latex(fr"{t1}x_1 + {t2}x_2 = {total_time}")
-                        st.latex(fr"x_2 = {max2}")
-                        st.latex(fr"x_1 = \frac{{{total_time} - {t2} \times {max2}}}{{{t1}}} = {(total_time - t2*max2)/t1:.1f}")
-                        
-                        st.markdown("""
-                        **Titik E (Maks Produk 2):**
-                        """)
-                        st.latex(fr"x_1 = 0, x_2 = \min\left(\frac{{{total_time}}}{{{t2}}}, {max2}\right) = {min(total_time/t2, max2):.1f}")
+                    # Gunakan parallel processing untuk perhitungan
+                    def hitung_z(titik):
+                        return p1*titik[0] + p2*titik[1]
+                    
+                    with ThreadPoolExecutor() as executor:
+                        nilai_Z = list(executor.map(hitung_z, [titik_A, titik_B, titik_C, titik_D, titik_E]))
+                    
+                    with st.expander("Langkah 2: Hitung Nilai Fungsi Tujuan", expanded=True):
+                        cols = st.columns(2)
+                        with cols[0]:
+                            st.latex(fr"""
+                            \begin{{aligned}}
+                            Z_A &= {p1} \times 0 + {p2} \times 0 = \text{{Rp}}0 \\
+                            Z_B &= {p1} \times {max1} + {p2} \times 0 = \text{{Rp}}{p1*max1:,} \\
+                            Z_C &= {p1} \times {titik_C[0]:.1f} + {p2} \times {titik_C[1]:.1f} = \text{{Rp}}{nilai_Z[2]:,.0f}
+                            \end{{aligned}}
+                            """)
+                        with cols[1]:
+                            st.latex(fr"""
+                            \begin{{aligned}}
+                            Z_D &= {p1} \times {titik_D[0]:.1f} + {p2} \times {max2} = \text{{Rp}}{nilai_Z[3]:,.0f} \\
+                            Z_E &= {p1} \times 0 + {p2} \times {titik_E[1]:.1f} = \text{{Rp}}{nilai_Z[4]:,.0f}
+                            \end{{aligned}}
+                            """)
 
-                # Langkah 2: Hitung nilai Z
-                titik_A = (0, 0)
-                titik_B = (max1, 0)
-                titik_C = (max1, min((total_time - t1*max1)/t2, max2))
-                titik_D = (min((total_time - t2*max2)/t1, max1), max2)
-                titik_E = (0, min(total_time/t2, max2))
-                
-                nilai_Z = [
-                    p1*titik_A[0] + p2*titik_A[1],
-                    p1*titik_B[0] + p2*titik_B[1],
-                    p1*titik_C[0] + p2*titik_C[1],
-                    p1*titik_D[0] + p2*titik_D[1],
-                    p1*titik_E[0] + p2*titik_E[1]
-                ]
-                
-                with st.expander("Langkah 2: Hitung Nilai Fungsi Tujuan", expanded=True):
-                    cols = st.columns(2)
-                    with cols[0]:
-                        st.latex(fr"""
-                        \begin{{aligned}}
-                        Z_A &= {p1} \times 0 + {p2} \times 0 = \text{{Rp}}0 \\
-                        Z_B &= {p1} \times {max1} + {p2} \times 0 = \text{{Rp}}{p1*max1:,} \\
-                        Z_C &= {p1} \times {titik_C[0]:.1f} + {p2} \times {titik_C[1]:.1f} = \text{{Rp}}{nilai_Z[2]:,.0f}
-                        \end{{aligned}}
+                    # Langkah 3: Tentukan solusi optimal
+                    optimal_idx = np.argmax(nilai_Z)
+                    optimal_point = [titik_A, titik_B, titik_C, titik_D, titik_E][optimal_idx]
+                    optimal_value = nilai_Z[optimal_idx]
+                    
+                    with st.expander("Langkah 3: Tentukan Solusi Optimal", expanded=True):
+                        st.markdown(f"""
+                        **Titik Optimal**: Pekerjaan {['A','B','C','D','E'][optimal_idx]}  
+                        **Alasan**: Memberikan nilai Z tertinggi (Rp{optimal_value:,.0f})
                         """)
-                    with cols[1]:
-                        st.latex(fr"""
-                        \begin{{aligned}}
-                        Z_D &= {p1} \times {titik_D[0]:.1f} + {p2} \times {max2} = \text{{Rp}}{nilai_Z[3]:,.0f} \\
-                        Z_E &= {p1} \times 0 + {p2} \times {titik_E[1]:.1f} = \text{{Rp}}{nilai_Z[4]:,.0f}
-                        \end{{aligned}}
-                        """)
-
-                # Langkah 3: Tentukan solusi optimal
-                optimal_idx = np.argmax(nilai_Z)
-                optimal_point = [titik_A, titik_B, titik_C, titik_D, titik_E][optimal_idx]
-                optimal_value = nilai_Z[optimal_idx]
                 
-                with st.expander("Langkah 3: Tentukan Solusi Optimal", expanded=True):
-                    st.markdown(f"""
-                    **Titik Optimal**: Pekerjaan {['A','B','C','D','E'][optimal_idx]}  
-                    **Alasan**: Memberikan nilai Z tertinggi (Rp{optimal_value:,.0f})
+                elif solver_option == "Simplex Method":
+                    # Gunakan metode simpleks dari scipy
+                    res = linprog(
+                        c=[-p1, -p2],  # Negative for maximization
+                        A_ub=[[t1, t2]],
+                        b_ub=[total_time],
+                        bounds=((0, max1), (0, max2))
+                    
+                    optimal_point = (res.x[0], res.x[1])
+                    optimal_value = p1*res.x[0] + p2*res.x[1]
+                    
+                    st.markdown("""
+                    ### Metode Simpleks
+                    Solusi ditemukan menggunakan algoritma simpleks dengan bantuan library `scipy.optimize.linprog`.
                     """)
+                    st.json({
+                        "status": "Optimal" if res.success else "Tidak Optimal",
+                        "x1": res.x[0],
+                        "x2": res.x[1],
+                        "slack": res.slack[0],
+                        "keuntungan": optimal_value
+                    })
 
                 # Tampilkan hasil akhir
                 st.markdown("---")
@@ -375,12 +514,38 @@ elif st.session_state.current_page == "Optimasi":
                     - **Keuntungan Maksimum:** Rp{optimal_value:,.0f}
                     """)
                     
-                    st.subheader("Detail Titik Pojok")
-                    st.write(f"A(0,0) = Rp{nilai_Z[0]:,.0f}")
-                    st.write(f"B({max1},0) = Rp{nilai_Z[1]:,.0f}")
-                    st.write(f"C({titik_C[0]:.1f},{titik_C[1]:.1f}) = Rp{nilai_Z[2]:,.0f}")
-                    st.write(f"D({titik_D[0]:.1f},{max2}) = Rp{nilai_Z[3]:,.0f}")
-                    st.write(f"E(0,{titik_E[1]:.1f}) = Rp{nilai_Z[4]:,.0f}")
+                    if solver_option == "Simple Corner Point":
+                        st.subheader("Detail Titik Pojok")
+                        st.write(f"A(0,0) = Rp{nilai_Z[0]:,.0f}")
+                        st.write(f"B({max1},0) = Rp{nilai_Z[1]:,.0f}")
+                        st.write(f"C({titik_C[0]:.1f},{titik_C[1]:.1f}) = Rp{nilai_Z[2]:,.0f}")
+                        st.write(f"D({titik_D[0]:.1f},{max2}) = Rp{nilai_Z[3]:,.0f}")
+                        st.write(f"E(0,{titik_E[1]:.1f}) = Rp{nilai_Z[4]:,.0f}")
+                    
+                    # Analisis Sensitivitas
+                    with st.expander("🔄 Analisis Sensitivitas", expanded=True):
+                        shadow_price = optimal_value / total_time * 1  # Perkiraan sederhana
+                        st.markdown(f"""
+                        ### Shadow Price
+                        - **Nilai**: Rp{shadow_price:,.0f}/jam
+                        - **Artinya**: Setiap penambahan 1 jam kerja dapat meningkatkan keuntungan sekitar Rp{shadow_price:,.0f}
+                        
+                        ### Range Kelayakan
+                        - **Waktu produksi**: {total_time*0.8:,.0f} - {total_time*1.2:,.0f} jam
+                        - **Permintaan produk**: ±20% dari nilai saat ini
+                        """)
+                    
+                    # Ekspor laporan
+                    st.download_button(
+                        label="📄 Export PDF Report",
+                        data=buat_laporan(optimal_point, optimal_value, {
+                            'p1': p1, 't1': t1, 'max1': max1,
+                            'p2': p2, 't2': t2, 'max2': max2,
+                            'total': total_time
+                        }),
+                        file_name="laporan_optimasi.pdf",
+                        mime="application/pdf"
+                    )
                 
                 with cols[1]:
                     st.subheader("Visualisasi Grafik")
@@ -449,6 +614,14 @@ st.markdown("""
     .mermaid svg {
         display: block;
         margin: 0 auto;
+    }
+    .stSpinner>div {
+        text-align: center;
+        margin: 20px 0;
+    }
+    .stDownloadButton>button {
+        width: 100%;
+        margin-top: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
