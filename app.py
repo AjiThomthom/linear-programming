@@ -175,7 +175,6 @@ if 'current_page' not in st.session_state:
 def change_page(page_name):
     st.session_state.current_page = page_name
 
-
 # =============== NAVIGASI SIDEBAR ===============
 with st.sidebar:
     st.image(f"data:image/png;base64,{LOGO_BASE64}", use_container_width=True)
@@ -215,7 +214,7 @@ if st.session_state.current_page == "Beranda":
     - Visualisasi grafik interaktif
     - Contoh kasus siap pakai
     - Penjelasan langkah demi langkah
-    - **Ekspor hasil ke PDF** (fitur baru)
+    - **Ekspor hasil ke PDF**
     """)
 
 # =============== HALAMAN PENGERTIAN ===============
@@ -358,19 +357,30 @@ elif st.session_state.current_page == "Optimasi":
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("Produk 1")
-                p1 = st.number_input("Keuntungan/unit (Rp)", 120000, key="p1")
-                t1 = st.number_input("Waktu produksi (jam)", 3, key="t1")
-                max1 = st.number_input("Maksimal permintaan", 30, key="max1")
+                p1 = st.number_input("Keuntungan/unit (Rp)", min_value=0, key="p1")
+                t1 = st.number_input("Waktu produksi (jam)", min_value=0, key="t1")
+                max1 = st.number_input("Maksimal permintaan", min_value=0, key="max1")
             with col2:
                 st.subheader("Produk 2")
-                p2 = st.number_input("Keuntungan/unit (Rp)", 80000, key="p2")
-                t2 = st.number_input("Waktu produksi (jam)", 2, key="t2")
-                max2 = st.number_input("Maksimal permintaan", 40, key="max2")
+                p2 = st.number_input("Keuntungan/unit (Rp)", min_value=0, key="p2")
+                t2 = st.number_input("Waktu produksi (jam)", min_value=0, key="t2")
+                max2 = st.number_input("Maksimal permintaan", min_value=0, key="max2")
             
-            total_time = st.number_input("Total waktu tersedia (jam)", 120, key="total")
+            total_time = st.number_input("Total waktu tersedia (jam)", min_value=0, key="total")
 
         if st.button("🧮 HITUNG SOLUSI DETAIL", type="primary", use_container_width=True):
             with st.spinner('Menghitung solusi optimal...'):
+                # Validasi input
+                if p1 == 0 and p2 == 0:
+                    st.error("Keuntungan produk tidak boleh 0 semua")
+                    st.stop()
+                if t1 == 0 and t2 == 0:
+                    st.error("Waktu produksi tidak boleh 0 semua")
+                    st.stop()
+                if total_time == 0:
+                    st.error("Total waktu tersedia tidak boleh 0")
+                    st.stop()
+                
                 # Langkah 1: Hitung titik pojok
                 st.markdown("---")
                 st.subheader("🔍 Proses Perhitungan")
@@ -477,14 +487,16 @@ elif st.session_state.current_page == "Optimasi":
                     fig, ax = plt.subplots(figsize=(10,6))
                     
                     # Plot feasible region
-                    x = np.linspace(0, max1*1.2, 100)
-                    y = (total_time - t1*x)/t2
+                    x = np.linspace(0, max1*1.2 if max1 > 0 else 40, 100)
+                    y = (total_time - t1*x)/t2 if t2 != 0 else np.zeros_like(x)
                     ax.plot(x, y, 'b-', linewidth=2, label=f'{t1}x₁ + {t2}x₂ ≤ {total_time}')
-                    ax.fill_between(x, 0, np.minimum(y, max2), where=(x<=max1), color='lightblue', alpha=0.3)
+                    ax.fill_between(x, 0, np.minimum(y, max2 if max2 > 0 else np.inf), where=(x<=max1 if max1 > 0 else True), color='lightblue', alpha=0.3)
                     
                     # Plot constraints
-                    ax.axvline(max1, color='red', linestyle='--', label=f'x₁ ≤ {max1}')
-                    ax.axhline(max2, color='green', linestyle='--', label=f'x₂ ≤ {max2}')
+                    if max1 > 0:
+                        ax.axvline(max1, color='red', linestyle='--', label=f'x₁ ≤ {max1}')
+                    if max2 > 0:
+                        ax.axhline(max2, color='green', linestyle='--', label=f'x₂ ≤ {max2}')
                     
                     # Plot optimal point
                     ax.plot(optimal_point[0], optimal_point[1], 'ro', markersize=10, label='Solusi Optimal')
