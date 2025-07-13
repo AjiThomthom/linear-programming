@@ -131,7 +131,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.info("""
-    **Versi 2.3.0**  
+    **Versi 2.3.1**  
     Fitur Baru:
     - Simpan/Load Kasus
     - Analisis Sensitivitas
@@ -344,7 +344,7 @@ elif st.session_state.current_page == "Optimasi":
             else:
                 st.session_state.produk3_active = False
             
-            total_time = st.number_input("Total waktu tersedia (jam)", 120, key="total")
+            total_time = st.number_input("Total waktu tersedia (jam)", 120, key="total_time")
 
             # Pilih metode solver
             solver_option = st.selectbox(
@@ -357,7 +357,7 @@ elif st.session_state.current_page == "Optimasi":
         kasus = {
             'p1': p1, 't1': t1, 'max1': max1,
             'p2': p2, 't2': t2, 'max2': max2,
-            'total': total_time,
+            'total_time': total_time,
             'produk3_active': st.session_state.produk3_active
         }
         
@@ -385,7 +385,7 @@ elif st.session_state.current_page == "Optimasi":
                     st.session_state.p2 = kasus_terupload['p2']
                     st.session_state.t2 = kasus_terupload['t2']
                     st.session_state.max2 = kasus_terupload['max2']
-                    st.session_state.total = kasus_terupload['total']
+                    st.session_state.total_time = kasus_terupload['total_time']
                     if kasus_terupload.get('produk3_active', False):
                         st.session_state.produk3_active = True
                         st.session_state.p3 = kasus_terupload['p3']
@@ -479,34 +479,38 @@ elif st.session_state.current_page == "Optimasi":
                         """)
                 
                 elif solver_option == "Simplex Method":
-                    # Perbaikan pada bagian metode simplex
-                elif solver_option == "Simplex Method":
-                # Gunakan metode simpleks dari scipy
                     try:
+                        # Gunakan metode simpleks dari scipy
                         res = linprog(
                             c=[-p1, -p2],  # Negative for maximization
                             A_ub=[[t1, t2]],
                             b_ub=[total_time],
                             bounds=((0, max1), (0, max2)),
-                            method='highs'  # Tambahkan metode solver
+                            method='highs'
                         )
-        
-                        optimal_point = (res.x[0], res.x[1])
-                        optimal_value = p1*res.x[0] + p2*res.x[1]
-        
-                        st.markdown("""
-                        ### Metode Simpleks
-                        Solusi ditemukan menggunakan algoritma simpleks dengan bantuan library `scipy.optimize.linprog`.
-                        """)
-                        st.json({
-                            "status": "Optimal" if res.success else "Tidak Optimal",
-                            "x1": res.x[0],
-                            "x2": res.x[1],
-                            "slack": res.slack[0],
-                            "keuntungan": optimal_value
-                        })
+                        
+                        if res.success:
+                            optimal_point = (res.x[0], res.x[1])
+                            optimal_value = p1*res.x[0] + p2*res.x[1]
+                            
+                            st.markdown("""
+                            ### Metode Simpleks
+                            Solusi ditemukan menggunakan algoritma simpleks dengan bantuan library `scipy.optimize.linprog`.
+                            """)
+                            st.json({
+                                "status": "Optimal",
+                                "x1": res.x[0],
+                                "x2": res.x[1],
+                                "slack": res.slack[0],
+                                "keuntungan": optimal_value
+                            })
+                        else:
+                            st.error("Metode simplex tidak menemukan solusi optimal")
+                            st.json(res)
+                            return
                     except Exception as e:
                         st.error(f"Error dalam metode simplex: {str(e)}")
+                        return
 
                 # Tampilkan hasil akhir
                 st.markdown("---")
