@@ -16,7 +16,7 @@ import tempfile
 # =============== FUNGSI UTILITAS ===============
 def mermaid(code: str, height=300) -> None:
     """Render diagram Mermaid menggunakan komponen HTML"""
-    html(f"""
+    html(rf"""
     <div class="mermaid" style="text-align: center;">
         {code}
     </div>
@@ -67,10 +67,14 @@ def create_header():
             font = ImageFont.load_default()
         draw.text((100, 60), "APLIKASI MODEL MATEMATIKA INDUSTRI", fill=(255,255,0), font=font)
         
-        # Add logo
-        logo_img = Image.open(BytesIO(base64.b64decode(LOGO_BASE64)))
-        logo_img = logo_img.resize((150,60))
-        img.paste(logo_img, (800, 20), logo_img)
+        # Add logo (jika logo berhasil dibuat)
+        if LOGO_BASE64:
+            try:
+                logo_img = Image.open(BytesIO(base64.b64decode(LOGO_BASE64)))
+                logo_img = logo_img.resize((150,60))
+                img.paste(logo_img, (800, 20), logo_img)
+            except:
+                pass
         
         buffered = BytesIO()
         img.save(buffered, format="JPEG")
@@ -131,13 +135,16 @@ def create_pdf_report(optimal_point, optimal_value, parameters, plot_bytes):
         
         # Tambahkan plot ke PDF
         if plot_bytes:
-            temp_img = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-            temp_img.write(plot_bytes.getvalue())
-            temp_img.close()
-            
-            img = RLImage(temp_img.name, width=5*inch, height=3*inch)
-            content.append(Paragraph("Visualisasi Solusi:", heading_style))
-            content.append(img)
+            try:
+                temp_img = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                temp_img.write(plot_bytes.getvalue())
+                temp_img.close()
+                
+                img = RLImage(temp_img.name, width=5*inch, height=3*inch)
+                content.append(Paragraph("Visualisasi Solusi:", heading_style))
+                content.append(img)
+            except Exception as e:
+                st.error(f"Error adding plot to PDF: {e}")
         
         # Build PDF
         doc.build(content)
@@ -148,8 +155,13 @@ def create_pdf_report(optimal_point, optimal_value, parameters, plot_bytes):
         return None
 
 # =============== KONFIGURASI APLIKASI ===============
-LOGO_BASE64 = create_logo()
-HEADER_BASE64 = create_header()
+# Pindahkan inisialisasi LOGO_BASE64 dan HEADER_BASE64 setelah definisi fungsi
+try:
+    LOGO_BASE64 = create_logo()
+    HEADER_BASE64 = create_header()
+except:
+    LOGO_BASE64 = ""
+    HEADER_BASE64 = ""
 
 st.set_page_config(
     layout="wide", 
@@ -162,6 +174,7 @@ if 'current_page' not in st.session_state:
 
 def change_page(page_name):
     st.session_state.current_page = page_name
+
 
 # =============== NAVIGASI SIDEBAR ===============
 with st.sidebar:
