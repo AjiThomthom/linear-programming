@@ -5,9 +5,13 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import base64
 from streamlit.components.v1 import html
-from scipy.optimize import linprog
-import plotly.graph_objects as go
-import pandas as pd
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+import tempfile
 
 # =============== FUNGSI UTILITAS ===============
 def mermaid(code: str, height=300) -> None:
@@ -75,6 +79,74 @@ def create_header():
         st.error(f"Error creating header: {e}")
         return ""
 
+@st.cache_data
+def create_pdf_report(optimal_point, optimal_value, parameters, plot_bytes):
+    """Membuat laporan PDF dari hasil optimasi"""
+    try:
+        # Buat file PDF sementara
+        pdf_buffer = BytesIO()
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = styles['Title']
+        heading_style = styles['Heading2']
+        body_style = styles['BodyText']
+        
+        # Konten PDF
+        content = []
+        
+        # Judul
+        content.append(Paragraph("Laporan Optimasi Produksi", title_style))
+        content.append(Spacer(1, 0.25*inch))
+        
+        # Informasi Parameter
+        content.append(Paragraph("Parameter Produksi:", heading_style))
+        param_text = f"""
+        <b>Produk 1:</b><br/>
+        - Keuntungan/unit: Rp{parameters['p1']:,}<br/>
+        - Waktu produksi: {parameters['t1']} jam<br/>
+        - Maksimal permintaan: {parameters['max1']} unit<br/><br/>
+        
+        <b>Produk 2:</b><br/>
+        - Keuntungan/unit: Rp{parameters['p2']:,}<br/>
+        - Waktu produksi: {parameters['t2']} jam<br/>
+        - Maksimal permintaan: {parameters['max2']} unit<br/><br/>
+        
+        <b>Total waktu tersedia:</b> {parameters['total_time']} jam
+        """
+        content.append(Paragraph(param_text, body_style))
+        content.append(Spacer(1, 0.25*inch))
+        
+        # Hasil Optimasi
+        content.append(Paragraph("Hasil Optimasi:", heading_style))
+        result_text = f"""
+        <b>Solusi Optimal:</b><br/>
+        - Produk 1 (x₁): {optimal_point[0]:.0f} unit<br/>
+        - Produk 2 (x₂): {optimal_point[1]:.0f} unit<br/>
+        - Keuntungan Maksimum: Rp{optimal_value:,.0f}
+        """
+        content.append(Paragraph(result_text, body_style))
+        content.append(Spacer(1, 0.25*inch))
+        
+        # Tambahkan plot ke PDF
+        if plot_bytes:
+            temp_img = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            temp_img.write(plot_bytes.getvalue())
+            temp_img.close()
+            
+            img = RLImage(temp_img.name, width=5*inch, height=3*inch)
+            content.append(Paragraph("Visualisasi Solusi:", heading_style))
+            content.append(img)
+        
+        # Build PDF
+        doc.build(content)
+        
+        return pdf_buffer.getvalue()
+    except Exception as e:
+        st.error(f"Error generating PDF: {e}")
+        return None
+
 # =============== KONFIGURASI APLIKASI ===============
 LOGO_BASE64 = create_logo()
 HEADER_BASE64 = create_header()
@@ -99,7 +171,6 @@ with st.sidebar:
     st.button("🏠 Beranda", on_click=change_page, args=("Beranda",), use_container_width=True)
     st.button("📚 Pengertian Optimasi", on_click=change_page, args=("Pengertian",), use_container_width=True)
     st.button("📊 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
-    st.button("📈 Optimasi 3 Produk", on_click=change_page, args=("Optimasi3",), use_container_width=True)
     
     st.markdown("---")
     st.info("""
@@ -121,6 +192,7 @@ if st.session_state.current_page == "Beranda":
     2. **Optimasi Produksi**: Hitung solusi optimal untuk kasus Anda
     3. Masukkan parameter produksi
     4. Klik tombol **Hitung Solusi**
+    5. **Export PDF**: Unduh hasil perhitungan dalam format PDF
     """)
     
     st.markdown("---")
@@ -130,7 +202,7 @@ if st.session_state.current_page == "Beranda":
     - Visualisasi grafik interaktif
     - Contoh kasus siap pakai
     - Penjelasan langkah demi langkah
-    - **Fitur Baru**: Optimasi untuk 3 produk sekaligus
+    - **Ekspor hasil ke PDF** (fitur baru)
     """)
 
 # =============== HALAMAN PENGERTIAN ===============
@@ -181,20 +253,18 @@ elif st.session_state.current_page == "Pengertian":
         ```python
         x₁ = jumlah meja
         x₂ = jumlah kursi
-        x₃ = jumlah lemari
         ```
         
         **2. Fungsi Tujuan**  
         ```python
-        Z = 120000*x₁ + 80000*x₂ + 150000*x₃  # Keuntungan total
+        Z = 120000*x₁ + 80000*x₂  # Keuntungan total
         ```
         
         **3. Kendala Produksi**  
         ```python
-        3*x₁ + 2*x₂ + 5*x₃ ≤ 120  # Waktu produksi
-        x₁ ≤ 30                    # Batas permintaan meja
-        x₂ ≤ 40                    # Batas permintaan kursi
-        x₃ ≤ 20                    # Batas permintaan lemari
+        3*x₁ + 2*x₂ ≤ 120  # Waktu produksi
+        x₁ ≤ 30            # Batas permintaan meja
+        x₂ ≤ 40            # Batas permintaan kursi
         ```
         
         ### 📊 Prinsip Kerja
@@ -208,7 +278,7 @@ elif st.session_state.current_page == "Pengertian":
         
         st.markdown("""
         **Keterangan:**
-        - **Variabel**: Jumlah produk (x₁, x₂, x₃)
+        - **Variabel**: Jumlah produk (x₁, x₂)
         - **Fungsi Tujuan**: Rumus keuntungan (Z)
         - **Kendala**: Batasan produksi
         - **Solusi**: Kombinasi optimal
@@ -414,6 +484,11 @@ elif st.session_state.current_page == "Optimasi":
                     ax.set_ylabel('Produk 2 (x₂)', fontsize=12)
                     ax.legend()
                     ax.grid(True, linestyle='--', alpha=0.6)
+                    
+                    # Simpan plot ke buffer untuk PDF
+                    plot_buffer = BytesIO()
+                    plt.savefig(plot_buffer, format='png', bbox_inches='tight', dpi=300)
+                    plt.close()
                     st.pyplot(fig)
                     
                     st.markdown("""
@@ -423,88 +498,34 @@ elif st.session_state.current_page == "Optimasi":
                     - **Garis putus-putus**: Batas permintaan pasar
                     """)
 
-# =============== HALAMAN OPTIMASI 3 PRODUK ===============
-elif st.session_state.current_page == "Optimasi3":
-    st.title("📈 OPTIMASI 3 PRODUK")
-    
-    with st.expander("🔧 PARAMETER PRODUKSI", expanded=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            p1 = st.number_input("Keuntungan Produk 1 (Rp)", 120000, key="p1_3")
-            t1 = st.number_input("Waktu Produk 1 (jam)", 3, key="t1_3")
-            max1 = st.number_input("Maks Produk 1", 30, key="max1_3")
-        with col2:
-            p2 = st.number_input("Keuntungan Produk 2 (Rp)", 80000, key="p2_3")
-            t2 = st.number_input("Waktu Produk 2 (jam)", 2, key="t2_3")
-            max2 = st.number_input("Maks Produk 2", 40, key="max2_3")
-        with col3:
-            p3 = st.number_input("Keuntungan Produk 3 (Rp)", 150000, key="p3_3")
-            t3 = st.number_input("Waktu Produk 3 (jam)", 5, key="t3_3")
-            max3 = st.number_input("Maks Produk 3", 20, key="max3_3")
-        
-        total_time = st.number_input("Total Waktu Tersedia (jam)", 120, key="total_3")
-
-    if st.button("🧮 HITUNG SOLUSI 3 PRODUK", type="primary", use_container_width=True):
-        with st.spinner('Menghitung solusi optimal...'):
-            # Solver Linear Programming
-            c = [-p1, -p2, -p3]  # Koefisien fungsi tujuan (minimisasi -Z)
-            A = [[t1, t2, t3]]    # Koefisien kendala waktu
-            b = [total_time]       # Total waktu
-            bounds = [
-                (0, max1),         # Batas x₁
-                (0, max2),         # Batas x₂
-                (0, max3)          # Batas x₃
-            ]
-            res = linprog(c, A_ub=A, b_ub=b, bounds=bounds)
-            
-            if res.success:
-                optimal_point = res.x
-                optimal_value = -res.fun
+                # Buat dan tampilkan tombol download PDF
+                st.markdown("---")
+                st.subheader("📤 Ekspor Hasil")
                 
-                st.success(f"""
-                **Solusi Optimal:**
-                - Produk 1: {optimal_point[0]:.0f} unit
-                - Produk 2: {optimal_point[1]:.0f} unit
-                - Produk 3: {optimal_point[2]:.0f} unit
-                **Keuntungan Maksimum:** Rp{optimal_value:,.0f}
-                """)
-
-                # Visualisasi 3D
-                fig = go.Figure(data=go.Scatter3d(
-                    x=[optimal_point[0]],
-                    y=[optimal_point[1]],
-                    z=[optimal_point[2]],
-                    mode='markers',
-                    marker=dict(size=10, color='red')
-                ))
-                fig.update_layout(
-                    scene=dict(
-                        xaxis_title='Produk 1',
-                        yaxis_title='Produk 2',
-                        zaxis_title='Produk 3'
-                    ),
-                    title="Solusi Optimal dalam 3D"
-                )
-                st.plotly_chart(fig)
-
-                # Ekspor Laporan
-                report = pd.DataFrame({
-                    "Parameter": ["Keuntungan/unit", "Waktu Produksi", "Batas Maksimal"],
-                    "Produk 1": [p1, t1, max1],
-                    "Produk 2": [p2, t2, max2],
-                    "Produk 3": [p3, t3, max3],
-                    "Total Waktu": [total_time, "-", "-"]
-                })
+                # Siapkan data untuk PDF
+                parameters = {
+                    'p1': p1,
+                    'p2': p2,
+                    't1': t1,
+                    't2': t2,
+                    'max1': max1,
+                    'max2': max2,
+                    'total_time': total_time
+                }
                 
-                # CSV
-                csv = report.to_csv(index=False)
-                st.download_button(
-                    "📥 Unduh Laporan (CSV)",
-                    data=csv,
-                    file_name="laporan_optimasi_3_produk.csv"
-                )
-            else:
-                st.error("Tidak ada solusi feasible dengan kendala yang diberikan!")
+                # Generate PDF
+                pdf_bytes = create_pdf_report(optimal_point, optimal_value, parameters, plot_buffer)
+                
+                if pdf_bytes:
+                    st.download_button(
+                        label="📥 Download PDF Report",
+                        data=pdf_bytes,
+                        file_name="optimasi_produksi.pdf",
+                        mime="application/pdf",
+                        help="Klik untuk mengunduh laporan lengkap dalam format PDF",
+                        use_container_width=True
+                    )
+                    st.success("PDF siap diunduh! Klik tombol di atas untuk mengunduh laporan lengkap.")
 
 # =============== STYLE CUSTOM ===============
 st.markdown("""
@@ -539,6 +560,11 @@ st.markdown("""
     .mermaid svg {
         display: block;
         margin: 0 auto;
+    }
+    .stDownloadButton>button {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
