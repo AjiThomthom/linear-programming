@@ -125,69 +125,70 @@ elif st.session_state.current_page == "Pengertian":
         - Kombinasi produksi terbaik
         - Dengan sumber daya terbatas
         - Guna mencapai keuntungan maksimal
+        """)
         
+        st.markdown("""
+        ### 🔍 Alur Penyelesaian Masalah
         ```mermaid
         graph TD
-        A[Permasalahan Produksi] --> B(Formulasi Model)
-        B --> C[Identifikasi Variabel]
-        B --> D[Definisi Fungsi Tujuan]
-        B --> E[Penentuan Kendala]
-        C --> F[Solusi Optimal]
-        D --> F
-        E --> F
+            A[Permasalahan Produksi] --> B(Formulasi Model)
+            B --> C[Identifikasi Variabel]
+            B --> D[Definisi Fungsi Tujuan]
+            B --> E[Penentuan Kendala]
+            C --> F[Solusi Optimal]
+            D --> F
+            E --> F
         ```
+        """)
+        
+        st.markdown("""
+        1. **Formulasi Model**  
+           Mengubah masalah nyata menjadi model matematika
+        2. **Identifikasi Variabel**  
+           Menentukan apa yang akan dioptimalkan (x₁, x₂)
+        3. **Definisi Fungsi Tujuan**  
+           Membuat rumus keuntungan (Z)
+        4. **Penentuan Kendala**  
+           Menetapkan batasan produksi
+        5. **Solusi Optimal**  
+           Hasil akhir yang memenuhi semua syarat
         """)
     
     with cols[1]:
         st.markdown("""
         ### 📝 Komponen Utama
         **1. Variabel Keputusan**  
-        Simbol (x₁, x₂) yang merepresentasikan jumlah produk yang akan diproduksi  
-        *Contoh: x₁ = jumlah meja, x₂ = jumlah kursi*
+        ```python
+        x₁ = jumlah meja
+        x₂ = jumlah kursi
+        ```
         
         **2. Fungsi Tujuan**  
-        Rumus matematika yang ingin dimaksimalkan/minimalkan:  
+        ```python
+        Z = 120000*x₁ + 80000*x₂  # Keuntungan total
         ```
-        Z = c₁x₁ + c₂x₂
-        ```
-        *Contoh: Z = 120.000x₁ + 80.000x₂*
         
         **3. Kendala Produksi**  
-        Batasan-batasan dalam proses produksi:  
+        ```python
+        3*x₁ + 2*x₂ ≤ 120  # Waktu produksi
+        x₁ ≤ 30            # Batas permintaan meja
+        x₂ ≤ 40            # Batas permintaan kursi
         ```
-        a₁x₁ + a₂x₂ ≤ b
-        x₁ ≤ d₁, x₂ ≤ d₂
+        
+        ### 📊 Prinsip Kerja
+        ```mermaid
+        graph LR
+            A[Variabel] -->|Input Produk| B(Fungsi Tujuan)
+            C[Kendala] -->|Filter Feasible| B
+            B --> D[Solusi Optimal]
         ```
-        *Contoh: 3x₁ + 2x₂ ≤ 120 (waktu produksi)*
+        
+        **Keterangan:**
+        - **Variabel**: Jumlah produk (x₁, x₂)
+        - **Fungsi Tujuan**: Rumus keuntungan (Z)
+        - **Kendala**: Batasan produksi
+        - **Solusi**: Kombinasi optimal
         """)
-    
-    st.markdown("---")
-    st.subheader("🔍 Prinsip Kerja Optimasi")
-    st.markdown("""
-    ```mermaid
-    graph LR
-    A[Variabel Keputusan] -->|Jumlah Produk| B(Fungsi Tujuan)
-    C[Kendala Produksi] -->|Batasan Sumber Daya| B
-    B --> D[Solusi Optimal]
-    ```
-    
-    **Penjelasan Diagram:**
-    1. **Variabel Keputusan** (A):  
-       - Input utama berupa jumlah produk yang akan dioptimalkan
-       - *Contoh: x₁ = 30 meja, x₂ = 15 kursi*
-    
-    2. **Fungsi Tujuan** (B):  
-       - Memproses variabel untuk menghitung keuntungan
-       - *Contoh: Z = 120.000×30 + 80.000×15 = 4.800.000*
-    
-    3. **Kendala Produksi** (C):  
-       - Filter yang memastikan solusi feasible
-       - *Contoh: 3×30 + 2×15 = 120 ≤ 120 (valid)*
-    
-    4. **Solusi Optimal** (D):  
-       - Output akhir berupa kombinasi produksi terbaik
-       - *Contoh: Produksi 30 meja & 15 kursi*
-    """)
 
 # =============== HALAMAN OPTIMASI ===============
 elif st.session_state.current_page == "Optimasi":
@@ -196,15 +197,22 @@ elif st.session_state.current_page == "Optimasi":
     with st.expander("📚 Contoh Kasus", expanded=True):
         st.subheader("Studi Kasus: Perusahaan Furniture")
         
-        # Tabel Contoh Kasus
-        st.markdown("""
-        | Produk | Keuntungan (Rp) | Waktu Produksi (jam) | Maks Permintaan (unit) |
-        |--------|-----------------|----------------------|-------------------------|
-        | Meja   | 120.000         | 3                    | 30                      |
-        | Kursi  | 80.000          | 2                    | 40                      |
-        **Total waktu tersedia:** 120 jam/minggu
-        """)
+        # Contoh kasus dalam bentuk input tapi disabled
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Produk 1 (Meja)")
+            st.text_input("Keuntungan/unit (Rp)", value="120000", disabled=True, key="ex_p1")
+            st.text_input("Waktu produksi (jam)", value="3", disabled=True, key="ex_t1")
+            st.text_input("Maksimal permintaan", value="30", disabled=True, key="ex_max1")
         
+        with col2:
+            st.subheader("Produk 2 (Kursi)")
+            st.text_input("Keuntungan/unit (Rp)", value="80000", disabled=True, key="ex_p2")
+            st.text_input("Waktu produksi (jam)", value="2", disabled=True, key="ex_t2")
+            st.text_input("Maksimal permintaan", value="40", disabled=True, key="ex_max2")
+        
+        st.text_input("Total waktu tersedia (jam)", value="120", disabled=True, key="ex_total")
+
         if st.button("💡 Lihat Solusi Contoh", type="secondary"):
             st.markdown("---")
             cols = st.columns(2)
@@ -402,27 +410,15 @@ st.markdown("""
     .stMarkdown h3 {
         color: #2874a6;
     }
-    table {
-        width: 100%;
-        border-collapse: collapse;
+    .stTextInput>div>div>input {
+        background-color: #f0f0f0;
+        color: #333;
     }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-    }
-    th {
-        background-color: #f2f2f2;
+    .mermaid {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
     }
 </style>
 """, unsafe_allow_html=True)
-
-# =============== DOWNLOAD BUTTON ===============
-with st.sidebar:
-    st.markdown("---")
-    st.download_button(
-        label="📥 Download Source Code",
-        data=open(__file__, "r").read(),
-        file_name="optimasi_produksi.py",
-        mime="text/python"
-    )
