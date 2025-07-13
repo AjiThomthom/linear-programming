@@ -40,7 +40,7 @@ def create_logo():
             font = ImageFont.truetype("arial.ttf", 24)
         except:
             font = ImageFont.load_default()
-        draw.text((50, 25), "APLIKASI MODEL MATEMATIKA", fill=(255,255,255), font=font, stroke_width=2, stroke_fill=(0,0,0))
+        draw.text((50, 25), "LINEAR PROGRAMMING", fill=(255,255,255), font=font, stroke_width=2, stroke_fill=(0,0,0))
         
         buffered = BytesIO()
         img.save(buffered, format="PNG")
@@ -65,7 +65,7 @@ def create_header():
             font = ImageFont.truetype("arial.ttf", 50)
         except:
             font = ImageFont.load_default()
-        draw.text((100, 60), "APLIKASI MODEL MATEMATIKA INDUSTRI", fill=(255,255,0), font=font)
+        draw.text((100, 60), "APLIKASI MODEL LINEAR PROGRAMMING", fill=(255,255,0), font=font)
         
         # Add logo (jika logo berhasil dibuat)
         if LOGO_BASE64:
@@ -189,7 +189,7 @@ with st.sidebar:
     st.info("""
     **Versi 2.2.1**  
     Dikembangkan oleh:  
-    *Megatama Setiaji & Ronnan Ghazi*  
+    *Megatama Setiaji*  
     🇮🇩 🇵🇸  
     © 2025
     """)
