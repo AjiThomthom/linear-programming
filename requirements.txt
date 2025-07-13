@@ -1,5 +1,5 @@
-streamlit>=1.32.2
-numpy>=1.26.0
-matplotlib>=3.8.0
-Pillow>=10.1.0
-reportlab>=4.0.0  # Tambahkan ini untuk PDF generation
+streamlit>=1.32.2      # Framework untuk membuat aplikasi web interaktif dengan Python
+numpy>=1.26.0          # Library untuk komputasi numerik dan operasi array/matriks
+matplotlib>=3.8.0      # Library visualisasi data (grafik, plot, diagram)
+Pillow>=10.1.0         # Library untuk manipulasi gambar (membuka, mengedit, menyimpan)
+reportlab>=4.0.0       # Library untuk generate dokumen PDF secara terprogram
