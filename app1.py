@@ -79,33 +79,8 @@ with st.sidebar:
     st.title("NAVIGASI")
     
     st.button("🏠 Beranda", on_click=change_page, args=("Beranda",), use_container_width=True)
-    st.button("📊 Optimasi", on_click=change_page, args=("Optimasi",), use_container_width=True)
-    
-    with st.expander("📚 Pengertian Optimasi", expanded=False):
-        st.markdown("""
-        **Optimasi Produksi** adalah metode untuk menentukan alokasi sumber daya terbatas (waktu, bahan) guna memaksimalkan keuntungan.
-        
-        **Prinsip Dasar:**
-        ```mermaid
-        graph LR
-        A[Variabel Keputusan] --> B(Fungsi Tujuan)
-        C[Kendala Produksi] --> B
-        B --> D[Solusi Optimal]
-        ```
-        
-        **Rumus Dasar:**
-        """)
-        st.latex(r"""
-        \text{Maksimalkan } Z = c_1x_1 + c_2x_2
-        """)
-        st.latex(r"""
-        \begin{cases}
-        a_1x_1 + a_2x_2 \leq b \\
-        x_1 \leq d_1 \\
-        x_2 \leq d_2 \\
-        x_1, x_2 \geq 0
-        \end{cases}
-        """)
+    st.button("📚 Pengertian Optimasi", on_click=change_page, args=("Pengertian",), use_container_width=True)
+    st.button("📊 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
     
     st.markdown("---")
     st.info("""
@@ -123,35 +98,110 @@ if st.session_state.current_page == "Beranda":
     
     st.markdown("""
     ## 📋 Panduan Penggunaan
-    1. Pilih menu **📊 Optimasi** di sidebar
-    2. Masukkan parameter produksi:
-       - Keuntungan per unit
-       - Waktu produksi
-       - Batas permintaan
-    3. Klik tombol **Hitung Solusi**
-    4. Analisis hasil di grafik dan tabel
+    1. **Pengertian Optimasi**: Pelajari dasar-dasar optimasi produksi
+    2. **Optimasi Produksi**: Hitung solusi optimal untuk kasus Anda
+    3. Masukkan parameter produksi
+    4. Klik tombol **Hitung Solusi**
     """)
     
     st.markdown("---")
-    st.subheader("🎯 Rangkuman Optimasi Produksi")
+    st.subheader("🎯 Fitur Utama")
     st.markdown("""
-    - Digunakan untuk **maksimalkan keuntungan** atau **minimalkan biaya**
-    - Menggunakan pendekatan **Linear Programming**
-    - Solusi optimal diperoleh dengan **mengevaluasi titik pojok**
-    - Hasil ditampilkan dalam **grafik interaktif**
+    - Analisis produksi optimal dengan **Linear Programming**
+    - Visualisasi grafik interaktif
+    - Contoh kasus siap pakai
+    - Penjelasan langkah demi langkah
+    """)
+
+# =============== HALAMAN PENGERTIAN ===============
+elif st.session_state.current_page == "Pengertian":
+    st.title("📚 Pengertian Optimasi Produksi")
+    
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown("""
+        ### 🧠 Konsep Dasar
+        **Optimasi Produksi** adalah metode matematika untuk menentukan:
+        - Kombinasi produksi terbaik
+        - Dengan sumber daya terbatas
+        - Guna mencapai keuntungan maksimal
+        
+        ```mermaid
+        graph TD
+        A[Permasalahan Produksi] --> B(Formulasi Model)
+        B --> C[Identifikasi Variabel]
+        B --> D[Definisi Fungsi Tujuan]
+        B --> E[Penentuan Kendala]
+        C --> F[Solusi Optimal]
+        D --> F
+        E --> F
+        ```
+        """)
+    
+    with cols[1]:
+        st.markdown("""
+        ### 📝 Komponen Utama
+        **1. Variabel Keputusan**  
+        Simbol (x₁, x₂) yang merepresentasikan jumlah produk yang akan diproduksi  
+        *Contoh: x₁ = jumlah meja, x₂ = jumlah kursi*
+        
+        **2. Fungsi Tujuan**  
+        Rumus matematika yang ingin dimaksimalkan/minimalkan:  
+        ```
+        Z = c₁x₁ + c₂x₂
+        ```
+        *Contoh: Z = 120.000x₁ + 80.000x₂*
+        
+        **3. Kendala Produksi**  
+        Batasan-batasan dalam proses produksi:  
+        ```
+        a₁x₁ + a₂x₂ ≤ b
+        x₁ ≤ d₁, x₂ ≤ d₂
+        ```
+        *Contoh: 3x₁ + 2x₂ ≤ 120 (waktu produksi)*
+        """)
+    
+    st.markdown("---")
+    st.subheader("🔍 Prinsip Kerja Optimasi")
+    st.markdown("""
+    ```mermaid
+    graph LR
+    A[Variabel Keputusan] -->|Jumlah Produk| B(Fungsi Tujuan)
+    C[Kendala Produksi] -->|Batasan Sumber Daya| B
+    B --> D[Solusi Optimal]
+    ```
+    
+    **Penjelasan Diagram:**
+    1. **Variabel Keputusan** (A):  
+       - Input utama berupa jumlah produk yang akan dioptimalkan
+       - *Contoh: x₁ = 30 meja, x₂ = 15 kursi*
+    
+    2. **Fungsi Tujuan** (B):  
+       - Memproses variabel untuk menghitung keuntungan
+       - *Contoh: Z = 120.000×30 + 80.000×15 = 4.800.000*
+    
+    3. **Kendala Produksi** (C):  
+       - Filter yang memastikan solusi feasible
+       - *Contoh: 3×30 + 2×15 = 120 ≤ 120 (valid)*
+    
+    4. **Solusi Optimal** (D):  
+       - Output akhir berupa kombinasi produksi terbaik
+       - *Contoh: Produksi 30 meja & 15 kursi*
     """)
 
 # =============== HALAMAN OPTIMASI ===============
 elif st.session_state.current_page == "Optimasi":
     st.title("📈 OPTIMASI PRODUKSI")
     
-    with st.expander("📚 Contoh Soal & Pembahasan", expanded=True):
+    with st.expander("📚 Contoh Kasus", expanded=True):
         st.subheader("Studi Kasus: Perusahaan Furniture")
+        
+        # Tabel Contoh Kasus
         st.markdown("""
-        | Produk | Keuntungan | Waktu Produksi | Maks Permintaan |
-        |--------|------------|----------------|------------------|
-        | Meja   | Rp120.000  | 3 jam          | 30 unit          |
-        | Kursi  | Rp80.000   | 2 jam          | 40 unit          |
+        | Produk | Keuntungan (Rp) | Waktu Produksi (jam) | Maks Permintaan (unit) |
+        |--------|-----------------|----------------------|-------------------------|
+        | Meja   | 120.000         | 3                    | 30                      |
+        | Kursi  | 80.000          | 2                    | 40                      |
         **Total waktu tersedia:** 120 jam/minggu
         """)
         
@@ -338,16 +388,41 @@ st.markdown("""
 <style>
     .stButton>button {
         transition: all 0.3s;
+        border-radius: 8px;
     }
     .stButton>button:hover {
         transform: scale(1.02);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .st-emotion-cache-1qg05tj {
-        font-family: "Arial", sans-serif;
+    .stMarkdown h2 {
+        color: #2e86c1;
+        border-bottom: 2px solid #2e86c1;
+        padding-bottom: 5px;
     }
     .stMarkdown h3 {
-        color: #2e86c1;
+        color: #2874a6;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# =============== DOWNLOAD BUTTON ===============
+with st.sidebar:
+    st.markdown("---")
+    st.download_button(
+        label="📥 Download Source Code",
+        data=open(__file__, "r").read(),
+        file_name="optimasi_produksi.py",
+        mime="text/python"
+    )
