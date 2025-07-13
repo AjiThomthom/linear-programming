@@ -41,10 +41,10 @@ LOGO_BASE64 = create_logo()
 HEADER_BASE64 = create_header()
 
 # =============== KONFIGURASI ===============
-st.set_page_config(layout="wide", page_title="Aplikasi Model Industri", page_icon="🏭")
+st.set_page_config(layout="wide", page_title="Aplikasi Model Optimasi Produksi", page_icon="📈")
 
 if 'current_page' not in st.session_state:
-    st.session_state.current_page = "Beranda"
+    st.session_state.current_page = "Pengertian"
 
 def change_page(page_name):
     st.session_state.current_page = page_name
@@ -52,87 +52,105 @@ def change_page(page_name):
 # =============== SIDEBAR ===============
 with st.sidebar:
     st.image(f"data:image/png;base64,{LOGO_BASE64}", use_container_width=True)
-    st.title("NAVIGASI")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.button("🏠 Beranda", on_click=change_page, args=("Beranda",), use_container_width=True)
-        st.button("📊 Optimasi", on_click=change_page, args=("Optimasi",), use_container_width=True)
+    st.title("MENU NAVIGASI")
+    st.button("📘 Pengertian Model", on_click=change_page, args=("Pengertian",), use_container_width=True)
+    st.button("🧮 Optimasi Produksi", on_click=change_page, args=("Optimasi",), use_container_width=True)
+    st.button("🔧 Cara Penggunaan", on_click=change_page, args=("Panduan",), use_container_width=True)
     st.markdown("---")
     st.info("""
-    **Versi 2.2.1**  
+    **Versi 3.0.0**  
     Dikembangkan oleh:  
-    *Megatama Setiaji & Ronnan Ghazi*  
-    🇮🇩 🇵🇸  
-    © 2025
+    *Megatama Setiaji*  
+    🇮🇩 © 2025
     """)
 
-# =============== BERANDA ===============
-if st.session_state.current_page == "Beranda":
-    st.title("Selamat Datang di Aplikasi Model Matematika Industri")
+# =============== HALAMAN PENGERTIAN ===============
+if st.session_state.current_page == "Pengertian":
+    st.title("📘 PENGERTIAN MODEL OPTIMASI PRODUKSI")
     st.image(f"data:image/jpeg;base64,{HEADER_BASE64}", use_container_width=True)
-    st.markdown("---")
-    st.subheader("📚 Panduan Cepat")
-    st.write("""
-    1. Pilih menu di sidebar untuk mengakses fitur
-    2. Masukkan parameter sesuai kasus Anda
-    3. Klik tombol hitung untuk melihat hasil
+    st.markdown("""
+    Model optimasi produksi digunakan untuk menentukan kombinasi terbaik dari produk yang akan diproduksi agar **memaksimalkan keuntungan** atau **meminimalkan biaya** berdasarkan **kendala sumber daya** seperti waktu, bahan baku, atau tenaga kerja.
+
+    ### Rumus Umum:
+    Fungsi Objektif:
+    $$\text{Maksimalkan } Z = c_1x_1 + c_2x_2 + \dots + c_nx_n$$
+
+    Kendala:
+    $$a_{11}x_1 + a_{12}x_2 + \dots + a_{1n}x_n \le b_1$$
+    $$a_{21}x_1 + a_{22}x_2 + \dots + a_{2n}x_n \le b_2$$
+
+    dan seterusnya...
+
+    Dengan syarat:
+    $$x_i \ge 0$$
     """)
 
-# =============== OPTIMASI ===============
+# =============== HALAMAN OPTIMASI ===============
 elif st.session_state.current_page == "Optimasi":
-    st.title("📈 OPTIMASI PRODUKSI")
+    st.title("🧮 OPTIMASI PRODUKSI")
 
-    with st.expander("🔧 PARAMETER PRODUKSI", expanded=True):
+    with st.expander("📚 Contoh Soal", expanded=True):
+        st.markdown("""
+        **PT Kayu Indah** memproduksi **Meja** dan **Kursi**:
+        - Meja: keuntungan Rp120.000/unit, waktu produksi 3 jam
+        - Kursi: keuntungan Rp80.000/unit, waktu produksi 2 jam
+        - Total waktu tersedia: 120 jam
+        - Maksimal permintaan: 30 meja dan 40 kursi per minggu
+        """)
+
+    with st.expander("🔧 Input Parameter", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Produk 1")
-            p1 = st.number_input("Keuntungan/unit (Rp)", 120000, key="p1")
-            t1 = st.number_input("Waktu produksi (jam)", 3, key="t1")
-            max1 = st.number_input("Maksimal permintaan", 30, key="max1")
+            p1 = st.number_input("Keuntungan Meja (Rp/unit)", 120000)
+            t1 = st.number_input("Waktu Meja (jam)", 3)
+            m1 = st.number_input("Maksimum Meja", 30)
         with col2:
-            st.subheader("Produk 2")
-            p2 = st.number_input("Keuntungan/unit (Rp)", 80000, key="p2")
-            t2 = st.number_input("Waktu produksi (jam)", 2, key="t2")
-            max2 = st.number_input("Maksimal permintaan", 40, key="max2")
+            p2 = st.number_input("Keuntungan Kursi (Rp/unit)", 80000)
+            t2 = st.number_input("Waktu Kursi (jam)", 2)
+            m2 = st.number_input("Maksimum Kursi", 40)
+        waktu_total = st.number_input("Total Waktu Tersedia (jam)", 120)
 
-        total_time = st.number_input("Total waktu tersedia (jam)", 120, key="total")
-
-    if st.button("🧮 HITUNG SOLUSI DETAIL", type="primary", use_container_width=True):
-        titik_A = (0, 0)
-        titik_B = (max1, 0)
-        titik_C = (max1, min((total_time - t1*max1)/t2, max2))
-        titik_D = (min((total_time - t2*max2)/t1, max1), max2)
-        titik_E = (0, min(total_time/t2, max2))
-        nilai_Z = [
-            p1*titik_A[0] + p2*titik_A[1],
-            p1*titik_B[0] + p2*titik_B[1],
-            p1*titik_C[0] + p2*titik_C[1],
-            p1*titik_D[0] + p2*titik_D[1],
-            p1*titik_E[0] + p2*titik_E[1]
+    if st.button("🚀 HITUNG OPTIMAL", type="primary"):
+        titik = [
+            (0,0),
+            (m1, 0),
+            (0, min(waktu_total/t2, m2)),
+            (m1, min((waktu_total - t1*m1)/t2, m2)),
+            (min((waktu_total - t2*m2)/t1, m1), m2)
         ]
-        optimal_idx = np.argmax(nilai_Z)
-        optimal_point = [titik_A, titik_B, titik_C, titik_D, titik_E][optimal_idx]
-        optimal_value = nilai_Z[optimal_idx]
+        nilai = [p1*x + p2*y for x,y in titik]
+        idx = np.argmax(nilai)
+        optimal = titik[idx]
 
-        st.header("📝 HASIL PERHITUNGAN")
-        st.subheader("Fungsi Tujuan")
-        st.latex(fr"Z = {p1}x_1 + {p2}x_2")
-        st.subheader("Solusi Optimal")
-        st.success(f"Produk 1: {optimal_point[0]:.0f} unit, Produk 2: {optimal_point[1]:.0f} unit\n\nKeuntungan Maksimum: Rp{optimal_value:,.0f}")
+        st.subheader("📈 Hasil Optimasi")
+        st.success(f"Produksi Meja: {optimal[0]:.0f}, Kursi: {optimal[1]:.0f}\nTotal Keuntungan: Rp{nilai[idx]:,.0f}")
 
         fig, ax = plt.subplots(figsize=(8,6))
-        x = np.linspace(0, max1*1.1, 100)
-        y = (total_time - t1*x)/t2
-        ax.plot(x, y, 'b-', label=f'{t1}x₁ + {t2}x₂ ≤ {total_time}')
-        ax.fill_between(x, 0, np.minimum(y, max2), where=(x<=max1), alpha=0.1)
-        ax.axvline(max1, color='r', label=f'x₁ ≤ {max1}')
-        ax.axhline(max2, color='g', label=f'x₂ ≤ {max2}')
-        ax.plot(optimal_point[0], optimal_point[1], 'ro', markersize=8)
-        ax.set_xlabel('Produk 1 (x₁)')
-        ax.set_ylabel('Produk 2 (x₂)')
+        x = np.linspace(0, m1*1.2, 200)
+        y = (waktu_total - t1*x) / t2
+        ax.plot(x, y, label=f"{t1}x + {t2}y ≤ {waktu_total}", color="blue")
+        ax.axvline(m1, label=f"x ≤ {m1}", color="red")
+        ax.axhline(m2, label=f"y ≤ {m2}", color="green")
+        ax.plot(optimal[0], optimal[1], 'ro', label="Titik Optimal")
+        ax.fill_between(x, 0, np.minimum(y, m2), where=(x<=m1), alpha=0.1)
+        ax.set_xlabel("Meja (x)")
+        ax.set_ylabel("Kursi (y)")
+        ax.set_title("Wilayah Solusi Feasible")
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
+
+# =============== HALAMAN PANDUAN ===============
+elif st.session_state.current_page == "Panduan":
+    st.title("📖 CARA PENGGUNAAN APLIKASI")
+    st.markdown("""
+    ### Langkah-langkah:
+    1. Pilih menu "🧮 Optimasi Produksi"
+    2. Masukkan parameter seperti keuntungan, waktu kerja, dan batasan
+    3. Klik tombol "HITUNG OPTIMAL"
+    4. Lihat hasil dan grafik solusi
+    5. Gunakan hasil untuk keputusan produksi
+    """)
 
 # =============== CUSTOM STYLE ===============
 st.markdown("""
